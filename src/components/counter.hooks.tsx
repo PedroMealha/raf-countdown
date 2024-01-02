@@ -2,43 +2,44 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-const useDialAnimationHook = (duration: number, target: number) => {
-	const [rotation, setRotation] = useState(0);
-	const isNegative = target < 0;
-	const finalRotation = target === 0 ? 360 : (isNegative ? -1 : 1) * 36 * Math.abs(target);
-	const animationFrameIdRef = useRef<number | null>(null);
-	const startTimeRef = useRef<number | null>(null);
+const useDialAnimationHook = (duration: number, target: number, initial: number) => {
+    const rotationPerDigit = 36; // Degrees per digit
+    // The initial rotation should be based on the initial digit, ensuring it's within a 0-360 degree range
+    const initialRotation = (initial % 10) * rotationPerDigit;
+    // The final rotation should similarly represent the target digit
+    const finalRotation = (target % 10) * rotationPerDigit;
 
-	const updateRotation = useCallback(
-		(timestamp: number) => {
-			if (startTimeRef.current === null) {
-				startTimeRef.current = timestamp;
-			}
-			const elapsed = timestamp - startTimeRef.current;
-			const normalizedTime = Math.min(elapsed / duration, 1);
-			const easedTime = easeInOutCubic(normalizedTime);
-			const newRotation = easedTime * finalRotation;
+    const [rotation, setRotation] = useState(initialRotation);
+    const animationFrameIdRef = useRef<number | null>(null);
+    const startTimeRef = useRef<number | null>(null);
 
-			if (elapsed < duration) {
-				setRotation(newRotation);
-				animationFrameIdRef.current = requestAnimationFrame(updateRotation);
-			} else {
-				setRotation(finalRotation);
-			}
-		},
-		[duration, finalRotation]
-	);
+    const updateRotation = useCallback((timestamp: number) => {
+        if (!startTimeRef.current) {
+            startTimeRef.current = timestamp;
+        }
+        const elapsed = timestamp - startTimeRef.current;
+        const normalizedTime = Math.min(elapsed / duration, 1);
+        const easedTime = easeInOutCubic(normalizedTime);
+        // Calculate new rotation based on eased time
+        const newRotation = initialRotation + easedTime * (finalRotation - initialRotation);
 
-	useEffect(() => {
-		animationFrameIdRef.current = requestAnimationFrame(updateRotation);
-		return () => {
-			if (animationFrameIdRef.current) {
-				cancelAnimationFrame(animationFrameIdRef.current);
-			}
-		};
-	}, [updateRotation]);
+        setRotation(newRotation);
 
-	return rotation;
+        if (normalizedTime < 1) {
+            animationFrameIdRef.current = requestAnimationFrame(updateRotation);
+        }
+    }, [initialRotation, finalRotation, duration]);
+
+    useEffect(() => {
+        animationFrameIdRef.current = requestAnimationFrame(updateRotation);
+        return () => {
+            if (animationFrameIdRef.current) {
+                cancelAnimationFrame(animationFrameIdRef.current);
+            }
+        };
+    }, [updateRotation]);
+
+    return rotation;
 };
 
 export default useDialAnimationHook;

@@ -1,15 +1,20 @@
 import React from 'react';
 import useDialAnimationHook from './counter.hooks';
 
-const Dial: React.FC<{ digit: number; duration: number, isNegative?: boolean }> = ({ digit, duration, isNegative = false }) => {
+const Dial: React.FC<{ digit: number; duration: number; initial: number; isNegative?: boolean }> = ({
+	digit,
+	duration,
+	initial,
+	isNegative = false,
+}) => {
 	const NUMBER_OF_DIGITS = 10;
 	const DIAL_RADIUS = 50;
-	const rotation = useDialAnimationHook(duration, digit);
+	const rotation = useDialAnimationHook(duration, digit, initial);
 
 	const renderNumber = (index: number) => {
 		const rotationAngle = -36 * index;
 		const style = { transform: `rotateX(${rotationAngle}deg) translateZ(${DIAL_RADIUS}px)` };
-		const displayValue = isNegative && (index === 1 || index === 9) ? '-' : index.toString();
+		const displayValue = isNegative && index === 0 ? '-' : index.toString();
 
 		return (
 			<div key={index} className='number' style={style}>
