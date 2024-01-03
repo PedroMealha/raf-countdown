@@ -12,13 +12,7 @@ const Counter: React.FC<{ initial: number; target: number; duration: number }> =
 	return (
 		<div className='counter' style={{ width: `${showNegativeDial ? totalDigitsLength + 1 : totalDigitsLength}ch` }}>
 			{showNegativeDial && (
-				<Dial
-					key='negative'
-					digit={target < 0 ? 1 : 0} // Ensuring the negative dial shows '-' at the end if the target is negative
-					duration={duration}
-					initial={initial < 0 ? 1 : 0}
-					isNegative
-				/>
+				<Dial key='negative' digit={target < 0 ? 1 : 0} duration={duration} initial={initial < 0 ? 1 : 0} isNegative />
 			)}
 			{initialDigits.map((digit, idx) => (
 				<Dial key={idx} digit={targetDigits[idx]} duration={duration} initial={digit} />

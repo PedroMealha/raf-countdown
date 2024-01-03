@@ -1,43 +1,43 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-
-const useDialAnimationHook = (duration: number, target: number, initial: number) => {
+const useDialAnimationHook = (duration: number, target: number, initial: number, isNegative: boolean = false) => {
 	const rotationPerDigit = 36;
-	const initialRotation = (initial % 10) * rotationPerDigit;
-	const finalRotation = (target % 10) * rotationPerDigit;
+	const startRotation = (initial % 10) * rotationPerDigit;
+	let rotationDifference = ((target % 10) - (initial % 10)) * rotationPerDigit;
 
-	const [rotation, setRotation] = useState(initialRotation);
+	if (isNegative) {
+		rotationDifference = target < 0 ? -36 : 36;
+	} else {
+		if (rotationDifference < 0) rotationDifference += 360;
+	}
+
+	const [rotation, setRotation] = useState(startRotation);
 	const animationFrameIdRef = useRef<number | null>(null);
 	const startTimeRef = useRef<number | null>(null);
 
-	const updateRotation = useCallback(
-		(timestamp: number) => {
+	useEffect(() => {
+		const updateRotation = (timestamp: number) => {
 			if (!startTimeRef.current) {
 				startTimeRef.current = timestamp;
 			}
 			const elapsed = timestamp - startTimeRef.current;
 			const normalizedTime = Math.min(elapsed / duration, 1);
-			const easedTime = easeInOutCubic(normalizedTime);
-			const newRotation = initialRotation + easedTime * (finalRotation - initialRotation);
+			const newRotation = startRotation + normalizedTime * rotationDifference;
 
 			setRotation(newRotation);
 
 			if (normalizedTime < 1) {
 				animationFrameIdRef.current = requestAnimationFrame(updateRotation);
 			}
-		},
-		[initialRotation, finalRotation, duration]
-	);
+		};
 
-	useEffect(() => {
 		animationFrameIdRef.current = requestAnimationFrame(updateRotation);
 		return () => {
 			if (animationFrameIdRef.current) {
 				cancelAnimationFrame(animationFrameIdRef.current);
 			}
 		};
-	}, [updateRotation]);
+	}, [startRotation, rotationDifference, duration]);
 
 	return rotation;
 };
